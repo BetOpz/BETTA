@@ -1,0 +1,56 @@
+﻿<Window x:Class="BETTA.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BETTA – Horse-Racing Markets"
+        Height="550"
+        Width="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#F8F8F8"
+        FontFamily="Segoe UI">
+
+    <DockPanel>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top"
+                    Orientation="Horizontal"
+                    Background="#007ACC"
+                    Height="40">
+            <Button x:Name="BtnRefresh"
+                    Content="Refresh"
+                    Click="RefreshButton_Click"
+                    Margin="10,5"
+                    Padding="12,4"
+                    Background="White"
+                    Foreground="#007ACC"/>
+        </StackPanel>
+
+        <!-- Data grid -->
+        <DataGrid x:Name="MarketGrid"
+                  AutoGenerateColumns="False"
+                  HeadersVisibility="Column"
+                  Margin="10">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Market ID"
+                                    Binding="{Binding market_id}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Market Name"
+                                    Binding="{Binding market_name}"
+                                    Width="2*"/>
+                <DataGridTextColumn Header="Start Time"
+                                    Binding="{Binding start_time}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Matched (£)"
+                                    Binding="{Binding total_matched}"
+                                    Width="*"/>
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <!-- Status bar -->
+        <TextBlock x:Name="StatusText"
+                   DockPanel.Dock="Bottom"
+                   Style="{StaticResource StatusText}"
+                   Text="Ready"/>
+    </DockPanel>
+</Window>

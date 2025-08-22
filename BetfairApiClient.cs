@@ -15,19 +15,9 @@ namespace BETTA
         public BetfairApiClient(string baseUrl = "http://127.0.0.1:5000")
         {
             _httpClient = new HttpClient();
-            _baseUrl = baseUrl;
+            _baseUrl = baseUrl.TrimEnd('/');
         }
 
-        public async Task<ApiResponse<LoginResult>> LoginAsync(string username, string password, string appKey)
-        {
-            var loginData = new { username, password, app_key = appKey };
-            return await PostAsync<LoginResult>("/login", loginData);
-        }
-
-        public async Task<ApiResponse<object>> LogoutAsync() => await PostAsync<object>("/logout", null);
-        public async Task<ApiResponse<AccountInfo>> GetAccountInfoAsync() => await GetAsync<AccountInfo>("/account");
-        public async Task<ApiResponse<MarketsResult>> GetMarketsAsync() => await GetAsync<MarketsResult>("/markets");
-        public async Task<ApiResponse<ServiceStatus>> GetStatusAsync() => await GetAsync<ServiceStatus>("/status");
         public async Task<bool> CheckHealthAsync()
         {
             try
@@ -35,10 +25,29 @@ namespace BETTA
                 var resp = await _httpClient.GetAsync($"{_baseUrl}/health");
                 return resp.IsSuccessStatusCode;
             }
-            catch { return false; }
+            catch
+            {
+                return false;
+            }
         }
 
-        private async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
+        public async Task<ApiResponse<LoginResult>> LoginAsync(string username, string password, string appKey)
+        {
+            var data = new { username, password, app_key = appKey };
+            return await PostAsync<LoginResult>("/login", data);
+        }
+
+        public async Task<ApiResponse<MarketInfo[]>> GetMarketsAsync(string mode = "rest")
+        {
+            return await GetAsync<MarketInfo[]>($"/data/markets?mode={mode}");
+        }
+
+        public async Task<ApiResponse<MarketInfo[]>> GetHorseRacingMarketsAsync()
+        {
+            return await GetAsync<MarketInfo[]>("/data/horse-markets");
+        }
+
+        public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
         {
             try
             {
@@ -55,7 +64,7 @@ namespace BETTA
 
         private async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object data)
         {
-            string json = JsonConvert.SerializeObject(data ?? new { });
+            string json = JsonConvert.SerializeObject(data);
             Debug.WriteLine($"POST {endpoint} payload: {json}");
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var resp = await _httpClient.PostAsync(_baseUrl + endpoint, content);
@@ -73,26 +82,29 @@ namespace BETTA
         [JsonProperty("error")] public string Error { get; set; }
         [JsonProperty("session_token")] public string SessionToken { get; set; }
         [JsonProperty("message")] public string Message { get; set; }
-        [JsonProperty("account")] public T Account { get; set; }
         [JsonProperty("markets")] public T Markets { get; set; }
     }
 
-    public class LoginResult { public string SessionToken { get; set; } public string Message { get; set; } }
-    public class AccountInfo
+    public class LoginResult
     {
-        public string Currency { get; set; }
-        public string Firstname { get; set; }
-        public string Lastname { get; set; }
-        public double AvailableBalance { get; set; }
-        public double Exposure { get; set; }
-        public double RetainedCommission { get; set; }
+        [JsonProperty("session_token")]
+        public string SessionToken { get; set; }
+        [JsonProperty("message")]
+        public string Message { get; set; }
     }
-    public class MarketsResult { public MarketInfo[] Markets { get; set; } }
-    public class MarketInfo { public string Id { get; set; } public string Name { get; set; } public int MarketCount { get; set; } }
-    public class ServiceStatus
+
+    public class MarketInfo
     {
-        [JsonProperty("logged_in")] public bool LoggedIn { get; set; }
-        [JsonProperty("session_token")] public string SessionToken { get; set; }
-        [JsonProperty("keep_alive_active")] public bool KeepAliveActive { get; set; }
+        [JsonProperty("market_id")]
+        public string MarketId { get; set; }
+
+        [JsonProperty("market_name")]
+        public string MarketName { get; set; }
+
+        [JsonProperty("start_time")]
+        public DateTime StartTime { get; set; }
+
+        [JsonProperty("total_matched")]
+        public double TotalMatched { get; set; }
     }
 }
