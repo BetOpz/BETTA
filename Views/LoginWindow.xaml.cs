@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows;
-using BETTA.Services;
 
 namespace BETTA.Views
 {
@@ -10,34 +8,54 @@ namespace BETTA.Views
         public LoginWindow()
         {
             InitializeComponent();
+
+            // Check the bool property correctly
+            if (Properties.Settings.Default.RememberCredentials)
+            {
+                // Assign strings to string properties
+                UserBox.Text = Properties.Settings.Default.Username ?? "";
+                PassBox.Password = Properties.Settings.Default.Password ?? "";
+                AppKeyBox.Password = Properties.Settings.Default.AppKey ?? "";
+            }
         }
 
-        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        private async void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
-            btnLogin.IsEnabled = false;
-            txtStatus.Text = "Logging in…";
-
             try
             {
-                var username = txtUsername.Text;
-                var password = txtPassword.Password;
-                var appKey = txtAppKey.Text;
+                App.ApiClient.SetAppKey(AppKeyBox.Password);
 
-                App.ApiClient.SetAppKey(appKey);
-                var result = await App.ApiClient.LoginAsync(username, password);
+                var result = await App.ApiClient.LoginAsync(
+                    UserBox.Text,
+                    PassBox.Password);
 
-                // Optionally store the token for future use
-                // App.ApiClient.SetBearerToken(result.Token);
+                if (!result.Success)
+                    throw new Exception("Login failed");
 
-                // Open main window on success
-                var main = new MainWindow();
-                main.Show();
+                // Check the bool property correctly
+                if (Properties.Settings.Default.RememberCredentials)
+                {
+                    // Save strings to string properties
+                    Properties.Settings.Default.Username = UserBox.Text;
+                    Properties.Settings.Default.Password = PassBox.Password;
+                    Properties.Settings.Default.AppKey = AppKeyBox.Password;
+                }
+                else
+                {
+                    // Clear string properties with empty strings
+                    Properties.Settings.Default.Username = "";
+                    Properties.Settings.Default.Password = "";
+                    Properties.Settings.Default.AppKey = "";
+                }
+
+                Properties.Settings.Default.Save();
+
+                new MainWindow().Show();
                 Close();
             }
             catch (Exception ex)
             {
-                txtStatus.Text = $"Login failed: {ex.Message}";
-                btnLogin.IsEnabled = true;
+                StatusText.Text = ex.Message;
             }
         }
     }
